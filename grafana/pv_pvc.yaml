@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  labels:
+    alicloud-pvname: grafana
+  name: grafana
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 1Gi
+  flexVolume:
+    driver: alicloud/nas
+    options:
+      path: /grafana/lib
+      server: 2125d4906f-wpg91.cn-shenzhen.nas.aliyuncs.com
+      vers: '3'
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nas
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  selector:
+    matchLabels:
+      alicloud-pvname: grafana
+  storageClassName: nas
+  volumeName: grafana

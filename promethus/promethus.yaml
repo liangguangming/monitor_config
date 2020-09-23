@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: prometheus
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'false'
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - command:
+            - prometheus
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.retention.time=30d'
+          image: 'prom/prometheus:latest'
+          imagePullPolicy: Always
+          name: prometheus
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+          resources:
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /etc/prometheus/prometheus.yml
+              name: prometheus-config
+              subPath: prometheus.yml
+            - mountPath: /prometheus/data
+              name: prometheus-data
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      volumes:
+        - configMap:
+            defaultMode: 420
+            items:
+              - key: prometheus.yml
+                mode: 420
+                path: prometheus.yml
+            name: prometheus-config
+          name: prometheus-config
+        - name: prometheus-data
+          persistentVolumeClaim:
+            claimName: prometheus-data
